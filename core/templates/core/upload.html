@@ -3,7 +3,7 @@
 {% block title %}Upload PDF{% endblock %}
 
 {% block content %}
-<h2>Upload PDF Document</h2>
+<h2>Upload Your PDF Document</h2>
 
 {% if message %}
 <p class="message {% if is_error %}error{% else %}success{% endif %}">{{ message }}</p>
@@ -11,7 +11,7 @@
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <label for="pdf_file">Choose PDF file:</label>
+    <label for="pdf_file">Select a PDF file to upload:</label>
     <input type="file" name="pdf_file" id="pdf_file" accept=".pdf" required>
     <button type="submit">Upload and Process</button>
 </form>
