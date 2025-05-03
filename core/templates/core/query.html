@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Query Document{% endblock %}
+
+{% block content %}
+<h2>Ask a Question About Your Documents</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <label for="query">Your Question:</label>
+    <input type="text" name="query" id="query" value="{{ query|default:'' }}" required>
+    <button type="submit">Ask</button>
+</form>
+
+{% if response %}
+<div class="response">
+    <h3>Answer:</h3>
+    <pre>{{ response }}</pre>
+</div>
+{% elif query %}
+<div class="response">
+    <p>Processing your query...</p> {# Or display a loading indicator #}
+</div>
+{% endif %}
+
+{% endblock %}
