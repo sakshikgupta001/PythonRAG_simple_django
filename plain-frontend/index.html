@@ -3,24 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document Chat</title>
+    <title>TextAssist</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Document Chat</h1>
-        <div class="upload-section">
-            <h2>Upload Documents</h2>
-            <input type="file" id="fileInput" multiple accept=".pdf">
-            <button id="uploadButton">Upload</button>
-            <div id="uploadStatus"></div>
-        </div>
-        <div class="chat-section">
-            <h2>Chat</h2>
-            <div id="chatWindow"></div>
-            <textarea id="chatInput" placeholder="Ask a question..."></textarea>
-            <button id="sendButton">Send</button>
-        </div>
+    <nav class="navbar">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#upload" class="nav-link">Upload</a>
+        <a href="#chat" class="nav-link">Chat</a>
+    </nav>
+    <div id="app">
+        <!-- Pages will be dynamically loaded here -->
     </div>
     <script src="script.js"></script>
 </body>
