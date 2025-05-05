@@ -11,38 +11,41 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
+# Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
+# Security settings
 SECRET_KEY = 'django-insecure-ny=@y@q1wyy_6=!f)_#v5@if^vkbupy#%sb$5gr4ub(zr#7pwy'
 DEBUG = True
 ALLOWED_HOSTS = []
 
+# Installed apps
 INSTALLED_APPS = [
     'core',
     'corsheaders',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
+# URL and WSGI configuration
 ROOT_URLCONF = 'rag_project.urls'
 WSGI_APPLICATION = 'rag_project.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
+# Localization settings
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom settings
