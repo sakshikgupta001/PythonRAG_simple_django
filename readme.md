@@ -136,12 +136,12 @@ The system implements a comprehensive data flow from PDF upload to query respons
 └───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
                                                                           │
                                                                           ▼
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│               │     │               │     │               │     │               │
-│ Response      │<────│ Context       │<────│ Similarity    │<────│ Vector        │
-│ Generation    │     │ Integration   │     │ Search        │     │ Storage       │
-│               │     │               │     │               │     │               │
-└───────────────┘     └───────────────┘     └───────────────┘     └───────────────┘
+                                                                  ┌───────────────┐
+                                                                  │               │
+                                                                  │ Vector        │
+                                                                  │ Storage       │
+                                                                  │               │
+                                                                  └───────────────┘
 ```
 
 #### 3.3.2 Query Processing Pipeline
