@@ -452,6 +452,76 @@ For production deployment, consider the following:
 - Enable HTTPS with SSL certificates
 - Set up proper database backups for ChromaDB
 
+## Running the Project Locally
+
+Follow these steps to set up and run the TextAssist project on your local machine:
+
+### 1. Clone the Repository
+1. Open a terminal and navigate to the directory where you want to clone the project.
+2. Run the following command:
+   ```bash
+   git clone <repository_url>
+   cd PythonRAG
+   ```
+
+### 2. Set Up a Virtual Environment
+1. Create a virtual environment named `.venv`:
+   ```bash
+   python3 -m venv .venv
+   ```
+2. Activate the virtual environment:
+   - On macOS/Linux:
+     ```bash
+     source .venv/bin/activate
+     ```
+   - On Windows:
+     ```bash
+     .venv\Scripts\activate
+     ```
+
+### 3. Install Dependencies
+1. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### 4. Configure Environment Variables
+1. Create a `.env` file in the root directory of the project.
+2. Add the following environment variables to the `.env` file:
+   ```env
+   GEMINI_API_KEY=<your_api_key>
+   CHROMA_DB_PATH=/path/to/chroma_db
+   CHROMA_COLLECTION_NAME=rag_collection
+   ```
+   Replace `<your_api_key>` with your Gemini API key and `/path/to/chroma_db` with the path to the ChromaDB directory.
+
+### 5. Run the Django Development Server
+1. Navigate to the project directory (if not already there).
+2. Start the Django development server:
+   ```bash
+   python manage.py runserver
+   ```
+3. Open your browser and navigate to `http://127.0.0.1:8000` to access the backend API.
+
+### 6. Open the Frontend
+1. Navigate to the `plain-frontend` directory.
+2. Open the `index.html` file in your browser to access the frontend interface.
+
+### 7. Test the Application
+1. Use the upload functionality to upload a PDF document.
+2. Interact with the chatbot to query the uploaded document.
+
+### 8. Deactivate the Virtual Environment
+When you're done, deactivate the virtual environment:
+```bash
+deactivate
+```
+
+### Notes
+- Ensure you have Python 3.8 or higher installed on your machine.
+- If you encounter any issues, check the logs in the terminal for debugging information.
+- For production deployment, refer to the "Production Deployment Considerations" section in the README file.
+
 ## 8. Dependencies and Technology Stack
 ### 8.1 Backend Dependencies
 - **Django**: Web framework for API endpoints and request handling
