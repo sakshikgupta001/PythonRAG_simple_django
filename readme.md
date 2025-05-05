@@ -45,7 +45,7 @@ The system architecture consists of three primary layers:
 |  Layer            |       |  Layer               |       |  Layer            |
 |                   |       |                      |       |                   |
 +-------------------+       +----------------------+       +-------------------+
-  HTML/CSS/JS              Django REST Endpoints         ChromaDB/SQLite
+  HTML/CSS/JS              Django REST Endpoints         ChromaDB
                            PDF Processing                Vector Storage
                            LLM Integration
 ```
@@ -117,7 +117,7 @@ PythonRAG/
 ├── data/                # Data storage
 │   ├── chroma_db/       # Vector database files
 │   ├── temp_uploads/    # Temporary storage for uploaded files
-├── db.sqlite3           # SQLite database for Django
+├── db.sqlite3           # SQLite database file (Not actively used by current Django settings)
 ├── manage.py            # Django management script
 ├── requirements.txt     # Python dependencies
 └── readme.md            # Project documentation
@@ -441,6 +441,7 @@ CHROMA_COLLECTION_NAME=rag_collection
    ```bash
    python manage.py runserver
    ```
+   *(Note: Running `python manage.py migrate` is not required for the core RAG functionality as the default SQLite database is not configured in settings.)*
 5. Open `plain-frontend/index.html` in a browser to access the application.
 
 #### 7.2.2 Production Deployment Considerations

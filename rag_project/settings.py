@@ -45,8 +45,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom settings
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')

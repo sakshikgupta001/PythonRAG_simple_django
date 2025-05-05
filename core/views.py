@@ -91,10 +91,11 @@ def upload_view(request):
         return JsonResponse({'success': False, 'message': "An unexpected error occurred."}, status=500)
     finally:
         # Ensure the temporary file is always removed
-        if os.path.exists(file_path):
+        if os.path.exists(file_path): # Checks if the file exists
             try:
-                os.remove(file_path)
+                os.remove(file_path) # Deletes the file
             except OSError as e:
+                # Logs an error if deletion fails, but doesn't stop the response
                 logger.error(f"Error removing temporary file {file_path}: {e}", exc_info=True)
 
 def query_view(request):
