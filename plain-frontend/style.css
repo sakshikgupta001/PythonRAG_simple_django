@@ -30,15 +30,36 @@ body {
     font-family: var(--font-sans);
     margin: 0;
     padding: 0;
-    background-color: var(--background);
+    background-color: transparent; /* Make body transparent to see ::before */
     color: var(--foreground);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative; /* Needed for z-index stacking */
+    z-index: 0;
+}
 
-    /* Subtle Doodle Background */
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e4e4e7' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    background-size: 40px 40px; /* Adjust size of the pattern */
+body::before {
+    content: "";
+    position: fixed; /* Cover the entire viewport */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1; /* Place it behind all content */
+
+    /* Apply the background image here */
+    background-image: url("./background.png");
+    background-color: var(--background); /* Apply the base color */
+    background-blend-mode: multiply; /* Blend the image with the background color */
+    background-size: contain; /* Or cover, depending on desired effect */
+    background-attachment: fixed; /* Keep background fixed during scroll */
+
+    /* Apply the blur */
+    filter: blur(0px); /* Adjust blur amount as needed */
+
+    /* Prevent blurred edges (optional) */
+    /* transform: scale(1.02); */
 }
 
 /* --- Navbar --- */
@@ -53,7 +74,7 @@ body {
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
     position: sticky; /* Make navbar sticky */
     top: 0;
-    z-index: 10; /* Ensure it's above other content */
+    z-index: 10; /* Ensure it's above other content AND the body::before */
 }
 
 .nav-link {
@@ -92,27 +113,23 @@ body {
     max-width: 800px;
     margin: 40px auto; /* More vertical margin */
     padding: 0; /* Remove padding, apply to sections */
-    background: transparent;
     box-shadow: none;
     opacity: 1;
     /* Slightly enhanced page transition */
     animation: fadeInPage 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    position: relative; /* Ensure container is stacked above body::before */
+    z-index: 1; /* Sit above the blurred background */
 }
 
 /* Section Styling (Applied to home, upload, chat) */
 .home-section, .upload-section, .chat-section {
-    background-color: var(--card);
+    background-color: var(--card); /* Keep the solid card background */
     border: 1px solid var(--border);
     border-radius: calc(var(--radius) + 4px); /* Slightly more pronounced radius */
     padding: 32px; /* Consistent padding */
     margin-bottom: 30px; /* Space between sections if multiple were visible */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04); /* Softer shadow */
     transition: transform 0.3s ease, box-shadow 0.3s ease; /* Add transition for hover */
-}
-
-.home-section:hover, .upload-section:hover, .chat-section:hover {
-    transform: translateY(-3px); /* Subtle lift on hover */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.04); /* Enhanced shadow on hover */
 }
 
 /* --- Headings --- */
