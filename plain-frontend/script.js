@@ -9,7 +9,7 @@ const routes = {
                 <h1>Welcome to <span class="neon-pink">TextAssist</span></h1>
                 <p class="tagline">Upload your documents and converse with AI.</p>
                 <div class="features">
-                    <div class="feature-item">Upload PDFs</div>
+                    <div class="feature-item">Upload Notes, PDF, Documents & Presentations</div>
                     <div class="feature-item">Ask Questions</div>
                     <div class="feature-item">Get AI Answers</div>
                 </div>
@@ -21,7 +21,7 @@ const routes = {
             <section class="upload-section">
                 <h2>Upload Documents</h2>
                 <label for="fileInput" class="file-label">
-                    <input type="file" id="fileInput" multiple accept=".pdf">
+                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.rtf,.ppt,.pptx" />
                     <span>Select Files</span>
                 </label>
                 <div id="file-list" class="file-list-display">No files selected</div>
@@ -147,7 +147,7 @@ function setupUpload() {
                 // ---
 
                 const formData = new FormData();
-                formData.append("pdf_file", file);
+                formData.append("file", file);
 
                 const response = await fetch(`${API_BASE_URL}/api/upload/`, {
                     method: "POST",

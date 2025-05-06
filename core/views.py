@@ -12,45 +12,54 @@ def upload_view(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': "Invalid request method. Only POST is allowed."}, status=405)
 
-    pdf_file = request.FILES.get('pdf_file')
-    if not pdf_file:
+    file = request.FILES.get('file')
+    if not file:
         return JsonResponse({'success': False, 'message': "No file provided."}, status=400)
 
-    if not pdf_file.name.lower().endswith('.pdf'):
-        return JsonResponse({'success': False, 'message': "Invalid file type. Please upload a PDF file."}, status=400)
+    # Replace the PDF validation with supported document formats
+    SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.rtf', '.ppt', '.pptx']
+    file_extension = os.path.splitext(file.name.lower())[1]
+    
+    if file_extension not in SUPPORTED_EXTENSIONS:
+        return JsonResponse({
+            'success': False, 
+            'message': f"Invalid file type. Supported formats: {', '.join(SUPPORTED_EXTENSIONS)}"
+        }, status=400)
 
     # Consider adding file size validation
     MAX_UPLOAD_SIZE = 200 * 1024 * 1024 # Example: 200MB limit
-    if pdf_file.size > MAX_UPLOAD_SIZE:
+    if file.size > MAX_UPLOAD_SIZE:
         return JsonResponse({'success': False, 'message': f"File size exceeds the limit of {MAX_UPLOAD_SIZE // 1024 // 1024}MB."}, status=413)
 
     temp_path = os.path.join(settings.BASE_DIR, 'temp_uploads')
     os.makedirs(temp_path, exist_ok=True)
     # Generate a unique temporary filename to avoid collisions and potential security issues
-    temp_filename = f"{uuid.uuid4()}.pdf"
+    original_extension = os.path.splitext(file.name)[1] # Get original extension
+    temp_filename = f"{uuid.uuid4()}{original_extension}" # Use original extension
     file_path = os.path.join(temp_path, temp_filename)
 
     try:
         # Save the uploaded file securely
         with open(file_path, 'wb') as f:
-            for chunk in pdf_file.chunks():
+            for chunk in file.chunks():
                 f.write(chunk)
 
         # Process the file
         try:
-            text = utils.extract_text_from_pdf(file_path)
+            # Replace direct call to extract_text_from_pdf with the new function
+            text = utils.extract_text_from_document(file_path)
             if not text or not text.strip():
-                logger.warning(f"Extracted empty text from PDF: {pdf_file.name}")
-                return JsonResponse({'success': False, 'message': "Could not extract text from the PDF."}, status=400)
+                logger.warning(f"Extracted empty text from document: {file.name}")
+                return JsonResponse({'success': False, 'message': "Could not extract text from the document."}, status=400)
 
             chunks = utils.chunk_text(text)
             if not chunks:
-                logger.warning(f"Could not chunk text from PDF: {pdf_file.name}")
+                logger.warning(f"Could not chunk text from PDF: {file.name}")
                 return JsonResponse({'success': False, 'message': "Failed to process text chunks."}, status=500)
 
             embeddings = utils.get_embeddings(chunks)
             if embeddings is None:
-                logger.error(f"Failed to get embeddings for PDF: {pdf_file.name}")
+                logger.error(f"Failed to get embeddings for PDF: {file.name}")
                 return JsonResponse({'success': False, 'message': "Failed to generate document embeddings."}, status=500)
 
             # ---- Start: Add to ChromaDB ----
@@ -61,7 +70,7 @@ def upload_view(request):
                     return JsonResponse({'success': False, 'message': "Failed to connect to the document database."}, status=503)
 
                 # Generate unique IDs for each chunk
-                base_doc_id = pdf_file.name # Consider sanitizing or using a hash if filename is complex/unsafe
+                base_doc_id = file.name # Consider sanitizing or using a hash if filename is complex/unsafe
                 chunk_ids = [f"{base_doc_id}_{i}" for i in range(len(chunks))]
 
                 collection.add(
@@ -69,25 +78,25 @@ def upload_view(request):
                     documents=chunks,
                     ids=chunk_ids
                 )
-                logger.info(f"Added {len(chunks)} chunks from {pdf_file.name} to ChromaDB.")
+                logger.info(f"Added {len(chunks)} chunks from {file.name} to ChromaDB.")
 
             except Exception as e:
-                logger.error(f"Failed to add embeddings for {pdf_file.name} to ChromaDB: {e}", exc_info=True)
+                logger.error(f"Failed to add embeddings for {file.name} to ChromaDB: {e}", exc_info=True)
                 return JsonResponse({'success': False, 'message': "Failed to store document embeddings in the database."}, status=500)
             # ---- End: Add to ChromaDB ----
 
         except Exception as e:
-            logger.error(f"Error processing PDF {pdf_file.name}: {e}", exc_info=True)
+            logger.error(f"Error processing PDF {file.name}: {e}", exc_info=True)
             return JsonResponse({'success': False, 'message': f"An error occurred during file processing: {e}"}, status=500)
 
         # Return success only after all steps (including DB add) are complete
-        return JsonResponse({'success': True, 'message': f"File '{pdf_file.name}' processed and stored successfully."}, status=200)
+        return JsonResponse({'success': True, 'message': f"File '{file.name}' processed and stored successfully."}, status=200)
 
     except IOError as e:
-        logger.error(f"IOError saving uploaded file {pdf_file.name}: {e}", exc_info=True)
+        logger.error(f"IOError saving uploaded file {file.name}: {e}", exc_info=True)
         return JsonResponse({'success': False, 'message': "Failed to save uploaded file."}, status=500)
     except Exception as e:
-        logger.error(f"Unexpected error handling upload for {pdf_file.name}: {e}", exc_info=True)
+        logger.error(f"Unexpected error handling upload for {file.name}: {e}", exc_info=True)
         return JsonResponse({'success': False, 'message': "An unexpected error occurred."}, status=500)
     finally:
         # Ensure the temporary file is always removed
