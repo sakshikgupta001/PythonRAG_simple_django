@@ -19,6 +19,8 @@
     --border: #e4e4e7;
     --input: #e4e4e7;
     --ring: #a1a1aa; /* Focus ring */
+    --success-foreground: #10b981; /* Green for success */
+    --success-background: #ecfdf5; /* Light green background for success */
 
     --radius: 0.5rem; /* Default border radius */
 
@@ -261,40 +263,25 @@ h1 .neon-pink { /* Remove or replace this class if not needed */
 }
 
 /* --- Upload Section --- */
-.upload-section {
-    text-align: center;
+
+/* --- General Card Styling (Inspired by example) --- */
+.card {
+    overflow: hidden;
+    margin-top: 0px; /* Add some margin if .upload-section had it */
+}
+
+/* Card adjustments when inside a styled .upload-section */
+.upload-section .card {
+    margin-top: 0;
+    box-shadow: none;
+    border: none; /* Section provides border and shadow */
+    border-radius: var(--radius); /* Simpler radius for card inside padded section */
+    /* The card's background-color: var(--card) will blend with the section's background */
 }
 
 .upload-section h2 {
     color: var(--foreground); /* Standard heading color */
     text-shadow: none;
-}
-
-.file-label { /* Style like a secondary button */
-    display: inline-flex; /* Use flex for alignment */
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    background-color: var(--secondary);
-    color: var(--secondary-foreground);
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-weight: 500;
-    font-family: var(--font-sans);
-    box-shadow: none;
-}
-
-.file-label:hover {
-    background-color: #e4e4e7;
-    transform: none; /* Remove previous transform */
-    box-shadow: none;
-}
-
-.file-label input[type="file"] {
-    display: none;
 }
 
 #uploadButton { /* Apply base and primary styles */
@@ -311,20 +298,6 @@ h1 .neon-pink { /* Remove or replace this class if not needed */
     text-align: center; /* Center status text */
 }
 
-/* Style for the status text above the progress bar */
-.status-text {
-    margin-bottom: 8px; /* Space between text and progress bar */
-    font-size: 13px;
-    color: var(--muted-foreground);
-    transition: color 0.3s ease; /* Smooth color transition if needed */
-}
-
-.success-message {
-    color: #16a34a; /* Green for success */
-    font-weight: 500;
-    text-shadow: none;
-}
-
 .error-message { /* General error message style */
     color: var(--destructive);
     font-weight: 500;
@@ -332,54 +305,46 @@ h1 .neon-pink { /* Remove or replace this class if not needed */
     background-color: transparent;
     border: none;
     padding: 0;
-    text-align: center;
+    text-align: left;
     margin-top: 10px;
 }
 
-.file-list-display {
-    margin-top: 15px;
-    margin-bottom: 20px;
-    padding: 10px 15px;
-    border: 1px solid var(--border); /* Solid border */
-    border-radius: var(--radius);
-    background-color: var(--secondary);
-    color: var(--muted-foreground);
-    font-size: 13px;
-    font-family: var(--font-sans);
-    text-align: left;
-    max-height: 110px;
-    overflow-y: auto;
-    line-height: 1.5;
-}
-.file-list-display br { display: none; } /* Use block display for names instead */
-.file-list-display span { display: block; margin-bottom: 4px; } /* Style file names */
-
-
 /* --- Progress Bar (Shadcn Inspired) --- */
-.progress-bar {
-    background-color: var(--secondary);
-    border: none;
-    border-radius: var(--radius);
-    overflow: hidden;
-    height: 8px; /* Slimmer */
-    margin-top: 0; /* Remove top margin as text is now above */
-    width: 100%; /* Full width */
+.upload-section .progress-bar-inner.success { 
+    background-color: var(--success-foreground); /* Use theme success color for progress bar */
 }
 
-.progress {
-    height: 100%;
-    width: 0;
-    background-color: var(--primary); /* Use primary color */
-    border-radius: var(--radius);
-    box-shadow: none;
-    transition: width 0.3s ease-out; /* Adjust timing if needed, but animation helper handles smoothness */
-    animation: none; /* Remove previous animation if transition is preferred */
+.upload-section .progress-bar-inner.error { 
+    background-color: var(--destructive); /* Use theme destructive color for progress bar */
 }
 
-/* Add error state for progress bar */
-.progress.error {
-    background-color: var(--destructive); /* Use destructive color for error */
-    width: 100%; /* Show full bar in error state */
+/* --- New Status Indicator Styles (Success/Error) --- */
+.upload-success-indicator, .upload-error-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.upload-success-indicator .icon-container {
+    background-color: var(--success-background); /* Light green background for success icon container */
+}
+
+.upload-success-indicator .status-icon.success-icon {
+    color: var(--success-foreground); /* Prominent green for success icon */
+}
+
+.upload-error-indicator .icon-container {
+    background-color: var(--destructive-background); /* Light red background for error icon container */
+}
+
+.upload-error-indicator .status-icon.error-icon {
+    color: var(--destructive-foreground); /* Prominent red for error icon */
+}
+
+.upload-success-indicator .message-container,
+.upload-error-indicator .message-container {
+    font-size: 0.9rem;
+    color: var(--foreground);
 }
 
 .chat-section h2 {
@@ -487,9 +452,261 @@ button#sendButton {
     from { opacity: 0; transform: translateY(8px) scale(0.98); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
-/* Keep progressAnimation if not using transition */
-/* @keyframes progressAnimation { ... } */
 
 @keyframes spin { /* Loading spinner animation */
     to { transform: translate(-50%, -50%) rotate(360deg); }
 }
+
+/* --- Upload Button in Footer --- */
+
+
+.button.loading .button-icon-svg {
+    opacity: 0;
+}
+
+/* --- NEW UPLOAD COMPONENT STYLES (Adapted) --- */
+/* Based on the provided CSS, adapted to use existing theme variables */
+
+/* Card Styles for Upload Section */
+.upload-section .card {
+    background-color: var(--card);
+    border-radius: 8px; /* Specific radius from new design */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Specific shadow from new design */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-top: 0; /* Override general .card margin-top if any */
+    border: 1px solid var(--border); /* Ensure border consistency if section doesn't provide it */
+}
+
+.upload-section .card-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.upload-section .card-title {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--foreground);
+    text-align: left; /* Override general h2 styling if needed */
+}
+
+.upload-section .card-description {
+    color: var(--muted-foreground);
+    font-size: 0.9rem; /* 14.4px */
+    text-align: left;
+}
+
+.upload-section .card-content {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.upload-section .card-footer {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    background-color: transparent; /* Ensure no double background if card has one */
+    text-align: left; /* Default, button can be centered/right aligned if needed */
+}
+
+/* Upload Area */
+.upload-section .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 8px; /* Specific radius */
+    padding: 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    cursor: pointer;
+    background-color: var(--background); /* Or var(--secondary) for a slight tint */
+    transition: background-color 0.2s;
+    position: relative; /* Added for positioning context for file-input */
+}
+
+.upload-section .upload-area:hover,
+.upload-section .upload-area.dragover { /* Added .dragover for consistency */
+    background-color: var(--secondary); /* Use theme variable for hover */
+    border-color: var(--primary);
+}
+
+.upload-section .upload-icon svg { /* Assuming the SVG is directly inside .upload-icon */
+    color: var(--muted-foreground); /* Was #888 */
+    /* width and height are set on the SVG element itself in HTML */
+}
+
+.upload-section .upload-text .upload-title { /* Ensure specificity if needed */
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--foreground);
+}
+
+.upload-section .upload-text .upload-subtitle {
+    font-size: 0.85rem; /* 13.6px */
+    color: var(--muted-foreground); /* Was #888 */
+}
+
+.upload-section .file-input { /* This class is on the <input type="file"> */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* File List */
+/* Note: script.js needs to generate HTML matching .file-item structure for these styles to apply */
+.upload-section .file-list-container {
+    /* display: none; */ /* JS controls this with style.display */
+    margin-bottom: 20px; /* Added from new CSS */
+}
+
+.upload-section .file-list-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--foreground);
+}
+
+.upload-section .file-list { /* This is the div with id="file-list" */
+    max-height: 200px; /* From new CSS */
+    overflow-y: auto;
+    background-color: transparent; /* Remove previous background if any */
+    border: none; /* Remove previous border if any */
+    padding: 0; /* Remove previous padding if any */
+}
+
+.upload-section .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: var(--secondary); /* Was #f5f5f5 */
+    border-radius: 4px; /* Specific radius */
+    margin-bottom: 8px;
+    font-family: var(--font-sans);
+}
+
+.upload-section .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.upload-section .file-icon { /* For an icon like an SVG or font icon */
+    color: var(--foreground); /* Was #555 */
+}
+
+.upload-section .file-name {
+    font-size: 0.9rem;
+    max-width: 200px; /* Adjust as needed */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--foreground);
+}
+
+.upload-section .file-size {
+    font-size: 0.75rem; /* 12px */
+    color: var(--muted-foreground); /* Was #888 */
+}
+
+.upload-section .remove-button { /* For a button to remove a file from the list */
+    background: none;
+    border: none;
+    color: var(--muted-foreground); /* Was #888 */
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.upload-section .remove-button:hover {
+    background-color: var(--border); /* Was #eee */
+    color: var(--foreground);
+}
+
+.upload-section .remove-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Progress Bar for Upload Section */
+/* The main container for progress is #uploadStatus which has class .progress-container */
+.upload-section .progress-container {
+    /* display: none; */ /* JS controls this */
+    margin-bottom: 20px; /* Added from new CSS */
+    margin-top: 15px; /* Keep existing or adjust */
+    text-align: left; /* From existing */
+}
+
+.upload-section .progress-info { /* This is a new sub-element for text like "Uploading..." and percentage */
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: var(--muted-foreground);
+}
+/* Ensure .status-text-element and .progress-percentage-element from script.js fit here or adapt */
+
+.upload-section .progress-bar-outer { /* Existing class, was .progress-bar-container in new CSS */
+    height: 8px;
+    background-color: var(--secondary); /* Was #eee */
+    border-radius: 4px; /* Specific radius */
+    overflow: hidden;
+    width: 100%;
+}
+
+.upload-section .progress-bar-inner { /* Existing class, was .progress-bar in new CSS */
+    height: 100%;
+    background-color: var(--primary); /* Was #4f46e5 */
+    width: 0%;
+    transition: width 0.3s ease; /* Keep existing transition */
+    border-radius: 4px; /* Match outer */
+}
+/* Keep existing .success and .error states for .progress-bar-inner */
+
+
+/* Upload Button in Upload Section */
+/* #uploadButton is styled by .button.button-primary.upload-button */
+.upload-section #uploadButton.upload-button {
+    width: 100%; /* From new CSS */
+    padding: 12px; /* From new CSS */
+    background-color: var(--primary); /* Was #4f46e5 */
+    color: var(--primary-foreground); /* Was white */
+    border: none; /* From new CSS */
+    border-radius: 6px; /* Specific radius */
+    font-weight: 500; /* From new CSS */
+    /* cursor: pointer; display, align-items, justify-content, gap, transition are from .button */
+}
+
+.upload-section #uploadButton.upload-button:hover:not(:disabled) {
+    background-color: rgba(var(--primary-rgb, 24, 24, 27), 0.9); /* Darken primary, assuming var(--primary-rgb) or similar for direct manipulation */
+    /* Fallback if var(--primary-rgb) is not defined: use a slightly darker shade manually or a pre-defined hover variable */
+}
+
+.upload-section #uploadButton.upload-button:disabled {
+    opacity: 0.7; /* From new CSS, existing .button:disabled has 0.5 */
+    /* cursor: not-allowed; from .button:disabled */
+}
+
+.upload-section #uploadButton.upload-button .spinner { /* Spinner inside the button */
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3); /* Assuming primary-foreground is light */
+    border-radius: 50%;
+    border-top-color: var(--primary-foreground); /* Was white */
+    /* animation: spin 1s linear infinite; */ /* Uses existing spin animation */
+}
+
+.upload-section{
+    padding: 0px;
+}
+

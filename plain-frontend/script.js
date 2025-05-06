@@ -18,19 +18,48 @@ const routes = {
     `,
     upload: `
         <div class="container">
-            <section class="upload-section">
-                <h2>Upload Documents</h2>
-                <label for="fileInput" class="file-label">
-                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.rtf,.ppt,.pptx" />
-                    <span>Select Files</span>
-                </label>
-                <div id="file-list" class="file-list-display">No files selected</div>
-                <button id="uploadButton" class="button button-primary">
-                    <span class="button-text">Upload</span>
-                    <span class="spinner"></span>
-                </button>
-                <div id="uploadStatus"></div>
-            </section>
+            <section class="upload-section"> <!-- Added section wrapper for consistency -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Upload Documents</h2>
+                        <p class="card-description">Upload your documents (PDF, DOCX, TXT, etc.) to chat with them. Max size: 200MB.</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <div class="upload-text">
+                                <p class="upload-title" id="uploadTitleLabel">Click to upload or drag & drop</p>
+                                <p class="upload-subtitle" id="uploadSubtitleLabel">Allowed: .pdf, .docx, .doc, .txt, .rtf, .ppt, .pptx</p>
+                            </div>
+                            <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.rtf,.ppt,.pptx" class="file-input" aria-labelledby="uploadTitleLabel uploadSubtitleLabel">
+                        </div>
+                        <div class="file-list-container" id="fileListContainer" style="display: none;">
+                            <p class="file-list-title">Selected files:</p>
+                            <div id="file-list" class="file-list"></div>
+                        </div>
+                        <div id="uploadStatus" class="progress-container">
+                            <!-- JS will inject progress or status messages here -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button id="uploadButton" class="button button-primary upload-button" disabled>
+                            <svg class="button-icon-svg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <span class="button-text">Upload Documents</span>
+                            <span class="spinner"></span> <!-- Existing spinner -->
+                        </button>
+                    </div>
+                </div>
+            </section> <!-- End of section wrapper -->
         </div>
     `,
     chat: `
@@ -69,7 +98,7 @@ function navigateTo(route) {
 }
 
 // --- Helper function for smooth progress animation ---
-function animateProgress(progressBar, targetWidth, duration = 500) {
+function animateProgress(progressBar, targetWidth, duration = 500, percentageElement) { // Added percentageElement
     const startWidth = parseFloat(progressBar.style.width) || 0;
     const change = targetWidth - startWidth;
     let startTime = null;
@@ -77,14 +106,20 @@ function animateProgress(progressBar, targetWidth, duration = 500) {
     function step(timestamp) {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
-        const progressRatio = Math.min(elapsed / duration, 1); // Ensure progress doesn't exceed 1
+        const progressRatio = Math.min(elapsed / duration, 1);
         const currentWidth = startWidth + change * progressRatio;
         progressBar.style.width = `${currentWidth}%`;
+        if (percentageElement) { // Update percentage text
+            percentageElement.textContent = `${Math.round(currentWidth)}%`;
+        }
 
         if (elapsed < duration) {
             requestAnimationFrame(step);
         } else {
-            progressBar.style.width = `${targetWidth}%`; // Ensure final target width
+            progressBar.style.width = `${targetWidth}%`;
+            if (percentageElement) { // Ensure final percentage text
+                percentageElement.textContent = `${Math.round(targetWidth)}%`;
+            }
         }
     }
     requestAnimationFrame(step);
@@ -96,21 +131,119 @@ function setupUpload() {
     const fileInput = document.getElementById("fileInput");
     const uploadStatus = document.getElementById("uploadStatus");
     const fileListDisplay = document.getElementById("file-list");
+    const uploadArea = document.getElementById("uploadArea");
+    const fileListContainer = document.getElementById("fileListContainer");
+    const buttonText = uploadButton.querySelector('.button-text');
+
+    let selectedFilesArray = []; // To store selected File objects
+
+    function renderSelectedFiles() {
+        if (selectedFilesArray.length > 0) {
+            let fileItemsHTML = selectedFilesArray.map((file, index) => {
+                // Simple remove icon (SVG for 'x')
+                const removeIconSvg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="remove-icon-svg">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>`;
+                return `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <span class="file-name" title="${file.name}">${file.name}</span>
+                        </div>
+                        <button class="remove-button" data-file-index="${index}" aria-label="Remove ${file.name}">
+                            ${removeIconSvg}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            fileListDisplay.innerHTML = fileItemsHTML;
+            fileListContainer.style.display = 'block';
+            uploadButton.disabled = false;
+            if (buttonText) buttonText.textContent = `Upload ${selectedFilesArray.length} File(s)`;
+
+            // Add event listeners to new remove buttons
+            document.querySelectorAll('.remove-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const indexToRemove = parseInt(event.currentTarget.getAttribute('data-file-index'));
+                    selectedFilesArray.splice(indexToRemove, 1);
+                    fileInput.value = ''; // Clear the actual file input's selection
+                    renderSelectedFiles(); // Re-render the list
+                });
+            });
+
+        } else {
+            fileListDisplay.innerHTML = "";
+            fileListContainer.style.display = 'none';
+            uploadButton.disabled = true;
+            if (buttonText) buttonText.textContent = "Upload Documents";
+        }
+    }
+
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            if (uploadStatus) uploadStatus.innerHTML = ''; // Clear previous status/progress
+            uploadArea.classList.remove('dragover');
+            const droppedFiles = Array.from(event.dataTransfer.files);
+            let newFilesAdded = false;
+            if (droppedFiles.length > 0) {
+                droppedFiles.forEach(file => {
+                    const isDuplicate = selectedFilesArray.some(existingFile => 
+                        existingFile.name === file.name && 
+                        existingFile.size === file.size && 
+                        existingFile.lastModified === file.lastModified
+                    );
+                    if (!isDuplicate) {
+                        selectedFilesArray.push(file);
+                        newFilesAdded = true;
+                    }
+                });
+                if (newFilesAdded) {
+                    renderSelectedFiles();
+                }
+            }
+        });
+    }
 
     fileInput.addEventListener("change", () => {
-        const files = fileInput.files;
-        if (files.length > 0) {
-            let fileSpans = Array.from(files).map(file => `<span>${file.name}</span>`).join('');
-            fileListDisplay.innerHTML = fileSpans;
-        } else {
-            fileListDisplay.textContent = "No files selected";
+        if (uploadStatus) uploadStatus.innerHTML = ''; // Clear previous status/progress
+        const newFiles = Array.from(fileInput.files);
+        let newFilesAddedToSelection = false;
+        if (newFiles.length > 0) {
+            newFiles.forEach(file => {
+                const isDuplicate = selectedFilesArray.some(existingFile => 
+                    existingFile.name === file.name && 
+                    existingFile.size === file.size && 
+                    existingFile.lastModified === file.lastModified
+                );
+                if (!isDuplicate) {
+                    selectedFilesArray.push(file);
+                    newFilesAddedToSelection = true;
+                }
+            });
+            
+            if (newFilesAddedToSelection) {
+                renderSelectedFiles();
+            }
+            // Clear the file input value to allow re-selecting the same file(s) 
+            // or to ensure the change event fires for subsequent selections.
+            fileInput.value = ''; 
         }
-        uploadStatus.innerHTML = ''; // Clear status on new selection
     });
 
     uploadButton.addEventListener("click", async () => {
-        const files = fileInput.files;
-        if (!files.length) {
+        // Use selectedFilesArray instead of fileInput.files
+        if (!selectedFilesArray.length) {
             alert("Please select at least one file.");
             return;
         }
@@ -118,33 +251,35 @@ function setupUpload() {
         uploadButton.classList.add('loading');
         uploadButton.disabled = true;
         fileInput.disabled = true;
+        if (uploadArea) uploadArea.style.pointerEvents = 'none';
 
-        // Prepare UI: Show progress bar container and initial status
         uploadStatus.innerHTML = `
-            <p class="status-text">Preparing upload...</p>
-            <div class="progress-bar">
-                <div class="progress" style="width: 0%;"></div>
+            <div class="progress-info">
+                <span class="status-text-element">Preparing upload...</span>
+                <span class="progress-percentage-element">0%</span>
+            </div>
+            <div class="progress-bar-outer">
+                <div class="progress-bar-inner" style="width: 0%;"></div>
             </div>`;
-        const progressBar = uploadStatus.querySelector('.progress');
-        const statusText = uploadStatus.querySelector('.status-text');
+        const progressBar = uploadStatus.querySelector('.progress-bar-inner');
+        const statusTextElement = uploadStatus.querySelector('.status-text-element');
+        const progressPercentageElement = uploadStatus.querySelector('.progress-percentage-element');
 
         let overallProgress = 0;
-        const totalFiles = files.length;
-        // Allocate ~95% for file uploads, 5% for finalization
+        const totalFiles = selectedFilesArray.length; // Use array length
         const progressPerFile = totalFiles > 0 ? 95 / totalFiles : 0;
 
         try {
             for (let i = 0; i < totalFiles; i++) {
-                const file = files[i];
+                const file = selectedFilesArray[i]; // Use file from array
                 const targetProgressForFile = overallProgress + progressPerFile;
 
-                statusText.textContent = `Uploading ${file.name} (${i + 1} of ${totalFiles})...`;
-
-                // --- Simulate progress during the fetch ---
-                // Start animating towards the target progress for this file
-                // Adjust duration based on expected upload time or keep fixed
-                animateProgress(progressBar, targetProgressForFile, 1000); // Simulate 1 sec per file upload
-                // ---
+                if (statusTextElement) statusTextElement.textContent = `Uploading ${file.name} (${i + 1} of ${totalFiles})...`;
+                
+                // Simulate upload delay for each file before calling API
+                // In a real scenario, animateProgress might be called with actual progress from XHR/fetch
+                await new Promise(resolve => setTimeout(resolve, 200)); // Short delay before "API call"
+                animateProgress(progressBar, targetProgressForFile - (progressPerFile / 2), 300, progressPercentageElement); // Animate to partial progress for the file
 
                 const formData = new FormData();
                 formData.append("file", file);
@@ -159,37 +294,54 @@ function setupUpload() {
                 if (!response.ok) {
                     throw new Error(result.message || `Failed to upload ${file.name}.`);
                 }
-
-                // Ensure progress bar reaches the target for this file upon success
-                progressBar.style.width = `${targetProgressForFile}%`;
-                overallProgress = targetProgressForFile; // Update overall progress
+                
+                // Animate to full progress for this file after successful API call
+                animateProgress(progressBar, targetProgressForFile, 300, progressPercentageElement);
+                overallProgress = targetProgressForFile;
             }
 
-            // Finalization step
-            statusText.textContent = "Finalizing...";
-            animateProgress(progressBar, 100, 300); // Animate to 100% quickly
+            if (statusTextElement) statusTextElement.textContent = "Finalizing...";
+            animateProgress(progressBar, 100, 300, progressPercentageElement);
 
-            // Short delay before showing success message
-            await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, 400)); // Wait for final animation
 
-            let uploadedFileNames = Array.from(files).map(file => file.name).join(', ');
-            // Replace progress bar with success message
-            uploadStatus.innerHTML = `<p class="success-message">Successfully uploaded: ${uploadedFileNames}</p>`;
-            fileInput.value = '';
-            fileListDisplay.textContent = "No files selected";
+            // Update status text to success, keep progress bar structure
+            const uploadedFileNames = selectedFilesArray.map(f => f.name).join(', ');
+            if (statusTextElement) statusTextElement.textContent = `Successfully uploaded: ${uploadedFileNames}`;
+            if (progressPercentageElement) progressPercentageElement.textContent = "100%";
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.classList.add('success'); // Add success class for styling
+            }
+            
+            // Reset file input and our array for next use
+            fileInput.value = ''; 
+            selectedFilesArray = [];
+            renderSelectedFiles(); 
+            
+            // Toast has been removed as per request
 
         } catch (error) {
             console.error("Error uploading document:", error);
-            // Show error message and make progress bar red
             uploadStatus.innerHTML = `
                 <p class="error-message">${error.message || 'Upload failed. Please try again.'}</p>
-                <div class="progress-bar">
-                    <div class="progress error" style="width: 100%;"></div>
+                <div class="progress-bar-outer error">
+                    <div class="progress-bar-inner error" style="width: 100%;"></div>
                 </div>`;
         } finally {
             uploadButton.classList.remove('loading');
-            uploadButton.disabled = false;
+            // renderSelectedFiles() called in try/catch will handle button state,
+            // but ensure inputs are re-enabled if something went wrong before that.
             fileInput.disabled = false;
+            if (uploadArea) uploadArea.style.pointerEvents = 'auto';
+            // Explicitly call renderSelectedFiles here if not cleared by success/error paths
+            // to ensure UI consistency if an early exit happened in the try block before full processing.
+            if (selectedFilesArray.length > 0) {
+                uploadButton.disabled = false;
+            } else {
+                uploadButton.disabled = true;
+                if (buttonText) buttonText.textContent = "Upload Documents";
+            }
         }
     });
 }
@@ -207,49 +359,54 @@ function setupChat() {
         // Convert **bold** to <strong>bold</strong>
         formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-        // Convert * bullet points to <ul><li>...</li></ul>
-        // Split into lines, process lines starting with *, wrap in <ul>
         const lines = formattedText.split('\n');
         let htmlContent = '';
         let inList = false;
+        let currentParagraph = '';
+
+        function flushParagraph() {
+            if (currentParagraph) {
+                htmlContent += `<p>${currentParagraph}</p>`;
+                currentParagraph = '';
+            }
+        }
+
         lines.forEach(line => {
             const trimmedLine = line.trim();
             if (trimmedLine.startsWith('* ')) {
+                flushParagraph(); // End current paragraph before starting a list
                 if (!inList) {
                     htmlContent += '<ul>';
                     inList = true;
                 }
-                // Remove the '* ' prefix and trim
-                htmlContent += `<li>${trimmedLine.substring(2).trim()}</li>`;
-            } else {
-                if (inList) {
+                // Remove the '* ' prefix and trim, then process for bold
+                let listItemContent = trimmedLine.substring(2).trim();
+                htmlContent += `<li>${listItemContent}</li>`;
+            } else { // Not a list item
+                if (inList) { // If we were in a list, end it
                     htmlContent += '</ul>';
                     inList = false;
                 }
-                // Add non-list lines as paragraphs (or divs)
                 if (trimmedLine.length > 0) {
-                    htmlContent += `<p>${trimmedLine}</p>`;
-                } else {
-                    // Preserve empty lines potentially for spacing, or skip
-                     htmlContent += '<br>'; // Or just continue
+                    if (currentParagraph) {
+                        currentParagraph += '<br>' + trimmedLine; // Add as part of current paragraph with a line break
+                    } else {
+                        currentParagraph = trimmedLine;
+                    }
+                } else { // Empty line indicates a paragraph break
+                    flushParagraph();
                 }
             }
         });
-        // Close list if the text ends with list items
-        if (inList) {
+
+        flushParagraph(); // Flush any remaining paragraph
+        if (inList) { // Close list if it's the last thing
             htmlContent += '</ul>';
         }
-
-        // If no list was created and the content is simple, wrap in <p>
-        if (!htmlContent.includes('<ul>') && !htmlContent.includes('<p>') && formattedText.trim().length > 0) {
-             htmlContent = `<p>${formattedText.trim()}</p>`;
-        } else if (htmlContent.startsWith('<br>')) {
-            // Avoid starting with a line break if the first line was empty
-            htmlContent = htmlContent.substring(4);
-        }
-
-
-        return htmlContent;
+        
+        // If after all processing, htmlContent is empty (e.g. input was only spaces or empty lines)
+        // return a non-breaking space in a paragraph to ensure the div has some content and is visible.
+        return htmlContent.trim() ? htmlContent : '<p>&nbsp;</p>';
     }
     // ---
 
