@@ -483,6 +483,7 @@ Follow these steps to set up and run the TextAssist project on your local machin
 1. Install the required Python packages:
    ```bash
    pip install -r requirements.txt
+   pip install --force-reinstall six
    ```
 
 ### 4. Configure Environment Variables
@@ -490,6 +491,7 @@ Follow these steps to set up and run the TextAssist project on your local machin
 2. Add the following environment variables to the `.env` file:
    ```env
    GEMINI_API_KEY=<your_api_key>
+   GOOGLE_API_KEY=<your_api_key>
    CHROMA_DB_PATH=/path/to/chroma_db
    CHROMA_COLLECTION_NAME=rag_collection
    ```
