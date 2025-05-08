@@ -735,6 +735,48 @@ main {
     transition: width 0.3s ease;
 }
 
+/* Animated stripes for progress bar */
+.upload-progress-bar {
+    height: 100%;
+    background-color: var(--primary);
+    border-radius: var(--radius-sm);
+    transition: width 0.3s ease-in-out;
+    position: relative; /* For pseudo-element animation */
+    overflow: hidden; /* Keep animation contained */
+}
+
+.upload-progress-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-image: linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.2) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.2) 75%,
+        transparent 75%,
+        transparent
+    );
+    z-index: 1;
+    background-size: 30px 30px; /* Adjust size of stripes */
+    animation: moveStripes 1s linear infinite;
+    opacity: 0.7;
+}
+
+@keyframes moveStripes {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 30px 0; /* Should match background-size x-value */
+    }
+}
+
 .upload-status {
     display: flex;
     align-items: center;

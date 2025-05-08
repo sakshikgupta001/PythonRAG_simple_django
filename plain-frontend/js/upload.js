@@ -199,9 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable) {
-                        const percentage = Math.round((event.loaded / event.total) * 100);
-                        updateProgress(percentage);
-                        uploadStatus.innerHTML = `Uploading ${currentFile.name}: ${percentage}%`;
+                        const rawPercentage = (event.loaded / event.total) * 100;
+                        // Cap at 99% during the onprogress events.
+                        // The final 100% will be set by onload upon success.
+                        const displayPercentage = Math.min(Math.round(rawPercentage), 80);
+                        updateProgress(displayPercentage);
+                        uploadStatus.innerHTML = `Uploading ${currentFile.name}: ${displayPercentage}%`;
                     }
                 };
 
