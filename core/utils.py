@@ -93,13 +93,23 @@ def initialize_chromadb():
     client = chromadb.PersistentClient(path=settings.CHROMA_DB_PATH)
     return client.get_or_create_collection(name=settings.CHROMA_COLLECTION_NAME)
 
-def query_chromadb(collection, query_text, n_results=5):
+def query_chromadb(collection, query_text, n_results=5, document_names=None): # Add document_names
     query_embedding = genai.embed_content(
         model="models/embedding-001",
         content=query_text,
         task_type="retrieval_query"
     )['embedding']
-    results = collection.query(query_embeddings=[query_embedding], n_results=n_results, include=['documents'])
+    
+    query_params = {
+        "query_embeddings": [query_embedding],
+        "n_results": n_results,
+        "include": ['documents', 'metadatas'] # Ensure metadatas are included
+    }
+
+    if document_names and isinstance(document_names, list) and len(document_names) > 0:
+        query_params["where"] = {"filename": {"$in": document_names}}
+
+    results = collection.query(**query_params)
     return results.get('documents', [[]])[0]
 
 def generate_response(query_text, context_chunks):

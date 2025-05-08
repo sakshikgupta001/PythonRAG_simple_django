@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let isSpeaking = false;
     let recognition = null;
     let synth = window.speechSynthesis;
+
+    let allDocumentNames = [];
+    let selectedDocumentNames = [];
     
     // Initialize
     initSpeechRecognition();
@@ -38,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     queryForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        handleSubmit();
+        handleQuerySubmit(e);
     });
     
     queryInput.addEventListener('input', () => {
@@ -79,109 +82,146 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
     }
-    
-    function fetchDocuments() {
-        // Simulate API call
-        setTimeout(() => {
-            documents = [
-                { id: '1', name: 'Annual Report 2023.pdf', type: 'pdf', uploadDate: new Date(2023, 11, 15) },
-                { id: '2', name: 'Project Proposal.docx', type: 'docx', uploadDate: new Date(2023, 10, 22) },
-                { id: '3', name: 'Meeting Notes.txt', type: 'txt', uploadDate: new Date(2023, 11, 5) },
-                { id: '4', name: 'Quarterly Presentation.pptx', type: 'pptx', uploadDate: new Date(2023, 9, 10) },
-                { id: '5', name: 'Research Paper.pdf', type: 'pdf', uploadDate: new Date(2023, 8, 18) },
-            ];
-            
-            // Default select some documents
-            selectedDocIds = ['1', '2'];
-            
-            renderDocuments();
-            updateSelectedCount();
-            updateQueryStatus();
-            
-            // Hide loading
+
+    async function fetchDocuments() {
+        documentsLoading.classList.remove('hidden');
+        documentsList.innerHTML = ''; // Clear previous list
+
+        try {
+            const response = await fetch('http://localhost:8000/api/documents/');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to fetch documents');
+            }
+            const data = await response.json();
+            allDocumentNames = data.documents || [];
+            renderDocumentsList();
+        } catch (error) {
+            console.error('Error fetching documents:', error);
+            showToast(`Error: ${error.message}`, 'error');
+            documentsList.innerHTML = '<li class="document-item">Failed to load documents.</li>';
+        } finally {
             documentsLoading.classList.add('hidden');
-            
-            // In a real implementation, you would use fetch API:
-            /*
-            fetch('/api/docs/all')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        documents = data.documents;
-                        renderDocuments();
-                    } else {
-                        showToast('Error', data.message || 'Failed to fetch documents', 'error');
-                    }
-                    documentsLoading.classList.add('hidden');
-                })
-                .catch(error => {
-                    showToast('Error', 'Failed to fetch documents. Please try again.', 'error');
-                    documentsLoading.classList.add('hidden');
-                });
-            */
-        }, 1000);
+        }
     }
-    
-    function renderDocuments() {
-        documentsList.innerHTML = '';
-        
-        documents.forEach(doc => {
-            const isSelected = selectedDocIds.includes(doc.id);
-            const docItem = document.createElement('li');
-            docItem.className = `document-item ${isSelected ? 'selected' : ''}`;
-            docItem.innerHTML = `
-                <input type="checkbox" id="doc-${doc.id}" class="document-checkbox" ${isSelected ? 'checked' : ''}>
-                <div class="document-info">
-                    <label for="doc-${doc.id}" class="document-name">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        ${doc.name}
-                    </label>
-                    <div class="document-date">${formatDate(doc.uploadDate)}</div>
-                </div>
-            `;
-            
-            const checkbox = docItem.querySelector('.document-checkbox');
-            checkbox.addEventListener('change', () => {
-                toggleDocumentSelection(doc.id);
+
+    function renderDocumentsList() {
+        documentsList.innerHTML = ''; // Clear previous items
+        if (allDocumentNames.length === 0) {
+            documentsList.innerHTML = '<li class="document-item" style="padding: 0.5rem;">No documents uploaded yet.</li>';
+        } else {
+            allDocumentNames.forEach(docName => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('document-item');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.classList.add('document-checkbox');
+                checkbox.value = docName;
+                checkbox.id = `doc-${docName.replace(/[^a-zA-Z0-9]/g, '-')}`; // Sanitize name for ID
+                checkbox.addEventListener('change', updateSelectedDocuments);
+
+                const label = document.createElement('label');
+                label.classList.add('document-info');
+                label.htmlFor = checkbox.id;
+
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('document-name');
+                nameSpan.textContent = docName;
+                // Add a title attribute for full name on hover if it's too long
+                if (docName.length > 25) { // Heuristic for "too long"
+                    nameSpan.title = docName;
+                }
+
+                label.appendChild(nameSpan);
+                listItem.appendChild(checkbox);
+                listItem.appendChild(label);
+                documentsList.appendChild(listItem);
             });
-            
-            documentsList.appendChild(docItem);
+        }
+        updateSelectedDocumentsUI(); // Initial UI update
+    }
+
+    function updateSelectedDocuments() {
+        selectedDocumentNames = [];
+        const checkboxes = documentsList.querySelectorAll('.document-checkbox:checked');
+        checkboxes.forEach(checkbox => {
+            selectedDocumentNames.push(checkbox.value);
         });
+        updateSelectedDocumentsUI();
     }
-    
-    function toggleDocumentSelection(docId) {
-        if (selectedDocIds.includes(docId)) {
-            selectedDocIds = selectedDocIds.filter(id => id !== docId);
-        } else {
-            selectedDocIds.push(docId);
+
+    function updateSelectedDocumentsUI() {
+        if (selectedCount) {
+            selectedCount.textContent = `${selectedDocumentNames.length} of ${allDocumentNames.length} selected`;
         }
-        
-        // Update UI
-        const docItem = document.querySelector(`#doc-${docId}`).closest('.document-item');
-        docItem.classList.toggle('selected');
-        
-        updateSelectedCount();
-        updateQueryStatus();
-    }
-    
-    function updateSelectedCount() {
-        selectedCount.textContent = `${selectedDocIds.length} of ${documents.length} selected`;
-    }
-    
-    function updateQueryStatus() {
-        if (selectedDocIds.length === 0) {
-            queryStatus.textContent = 'No documents selected';
-        } else {
-            queryStatus.textContent = `Querying ${selectedDocIds.length} document${selectedDocIds.length > 1 ? 's' : ''}`;
+
+        if (queryStatus) {
+            if (allDocumentNames.length === 0) {
+                queryStatus.textContent = 'No documents to query.';
+                queryInput.disabled = true;
+                sendBtn.disabled = true;
+            } else if (selectedDocumentNames.length === 0) {
+                queryStatus.textContent = `Querying all ${allDocumentNames.length} document(s).`;
+                queryInput.disabled = false;
+            } else {
+                queryStatus.textContent = `Querying ${selectedDocumentNames.length} selected document(s).`;
+                queryInput.disabled = false;
+            }
+            // Re-evaluate send button state based on input text
+            sendBtn.disabled = queryInput.value.trim() === '' || (allDocumentNames.length === 0);
         }
     }
-    
+
+    async function handleQuerySubmit(event) {
+        event.preventDefault();
+        const queryText = queryInput.value.trim();
+        if (!queryText) return;
+
+        // Disable input and button during processing
+        queryInput.disabled = true;
+        sendBtn.disabled = true;
+        addMessageToChat('user', queryText);
+        queryInput.value = '';
+        queryInput.style.height = 'auto'; // Reset height
+        emptyChat.classList.add('hidden');
+        clearBtn.disabled = false;
+        downloadBtn.disabled = false;
+
+        try {
+            const response = await fetch('http://localhost:8000/api/query/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    query: queryText,
+                    document_names: selectedDocumentNames // Send selected document names
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to get response from server');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                addMessageToChat('assistant', data.response);
+            } else {
+                addMessageToChat('assistant', `Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Query error:', error);
+            addMessageToChat('assistant', `Sorry, I encountered an error: ${error.message}`);
+        } finally {
+            // Re-enable input and button
+            queryInput.disabled = (allDocumentNames.length === 0); // Disable if no docs overall
+            sendBtn.disabled = queryInput.value.trim() === '' || (allDocumentNames.length === 0);
+            updateSelectedDocumentsUI(); // Refresh status and button state
+        }
+    }
+
     function toggleListening() {
         if (!recognition) {
             showToast('Voice Input Not Supported', 'Your browser doesn\'t support voice input. Please use a modern browser like Chrome.', 'error');
@@ -240,116 +280,18 @@ document.addEventListener('DOMContentLoaded', () => {
         synth.speak(utterance);
     }
     
-    function handleSubmit() {
-        const query = queryInput.value.trim();
-        if (!query || isLoading) return;
-        
-        // Stop listening if active
-        if (isListening && recognition) {
-            recognition.stop();
-            isListening = false;
-            updateVoiceToggleUI();
-        }
-        
-        // Add user message
-        const userMessage = {
+    function addMessageToChat(sender, text) {
+        const message = {
             id: Date.now().toString(),
-            role: 'user',
-            content: query,
+            role: sender,
+            content: text,
             timestamp: new Date()
         };
         
-        messages.push(userMessage);
+        messages.push(message);
         renderMessages();
-        
-        // Clear input
-        queryInput.value = '';
-        queryInput.style.height = 'auto';
-        queryInput.dispatchEvent(new Event('input'));
-        
-        // Show loading
-        isLoading = true;
-        sendBtn.disabled = true;
-        sendBtn.querySelector('.send-icon').classList.add('hidden');
-        sendBtn.querySelector('.loader').classList.remove('hidden');
-        
-        // Enable download and clear buttons
-        downloadBtn.disabled = false;
-        clearBtn.disabled = false;
-        
-        // Simulate API response
-        setTimeout(() => {
-            const assistantMessage = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: `This is a simulated response to your query: "${query}". In a real implementation, this would be the response from the Gemini AI based on the context of your selected documents.
-
-For your query, I would analyze the content of ${selectedDocIds.length} selected document(s) and provide relevant information extracted from them. The response would highlight key passages that answer your question and synthesize information across multiple documents if needed.
-
-The RAG system would:
-1. Process your query
-2. Search through the vector embeddings of your documents
-3. Retrieve the most relevant chunks of text
-4. Generate a comprehensive answer using Gemini AI
-
-Would you like me to provide more specific information about any particular topic in your documents?`,
-                timestamp: new Date()
-            };
-            
-            messages.push(assistantMessage);
-            renderMessages();
-            
-            // Hide loading
-            isLoading = false;
-            sendBtn.disabled = !queryInput.value.trim();
-            sendBtn.querySelector('.send-icon').classList.remove('hidden');
-            sendBtn.querySelector('.loader').classList.add('hidden');
-            
-            // In a real implementation, you would use fetch API:
-            /*
-            fetch('/api/query/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query,
-                    docIds: selectedDocIds,
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const assistantMessage = {
-                        id: (Date.now() + 1).toString(),
-                        role: 'assistant',
-                        content: data.response,
-                        timestamp: new Date()
-                    };
-                    
-                    messages.push(assistantMessage);
-                    renderMessages();
-                } else {
-                    showToast('Query Failed', data.message || 'Failed to process your query', 'error');
-                }
-                
-                isLoading = false;
-                sendBtn.disabled = !queryInput.value.trim();
-                sendBtn.querySelector('.send-icon').classList.remove('hidden');
-                sendBtn.querySelector('.loader').classList.add('hidden');
-            })
-            .catch(error => {
-                showToast('Query Failed', 'There was an error processing your query. Please try again.', 'error');
-                
-                isLoading = false;
-                sendBtn.disabled = !queryInput.value.trim();
-                sendBtn.querySelector('.send-icon').classList.remove('hidden');
-                sendBtn.querySelector('.loader').classList.add('hidden');
-            });
-            */
-        }, 2000);
     }
-    
+
     function renderMessages() {
         if (messages.length === 0) {
             emptyChat.classList.remove('hidden');

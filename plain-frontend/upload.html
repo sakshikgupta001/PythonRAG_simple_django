@@ -34,7 +34,7 @@
                     </a>
                     <a href="query.html" class="nav-link">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1-2 2z"></path>
                         </svg>
                         Query
                     </a>
@@ -95,7 +95,8 @@
                                 <p class="card-subtitle">Select a file to upload and process</p>
                             </div>
                             <div class="card-body">
-                                <div id="upload-dropzone" class="upload-dropzone">
+                                <label id="upload-dropzone" class="upload-dropzone">
+                                    <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.pptx" class="hidden">
                                     <div class="upload-icon-container">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -107,8 +108,7 @@
                                         <p id="upload-filename" class="upload-filename">Drag and drop or click to upload</p>
                                         <p id="upload-filesize" class="upload-filesize">PDF, DOCX, TXT, PPTX (Max 50MB)</p>
                                     </div>
-                                </div>
-                                <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.pptx" class="hidden">
+                                </label>
 
                                 <div id="upload-progress-container" class="upload-progress-container hidden">
                                     <div class="upload-progress-header">
@@ -122,6 +122,7 @@
                                 </div>
                             </div>
                             <div class="card-footer">
+                                
                                 <button id="upload-btn" class="btn btn-primary btn-full" disabled>
                                     <span id="upload-btn-text">Upload Document</span>
                                     <svg id="upload-btn-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
@@ -129,7 +130,7 @@
                                         <polyline points="17 8 12 3 7 8"></polyline>
                                         <line x1="12" y1="3" x2="12" y2="15"></line>
                                     </svg>
-                                    <svg id="upload-btn-loader" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon loader  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon loader hidden">
+                                    <svg id="upload-btn-loader" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon loader hidden">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <path d="M12 6v6l4 2"></path>
                                     </svg>

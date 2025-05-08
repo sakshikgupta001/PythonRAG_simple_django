@@ -651,12 +651,17 @@ main {
 }
 
 .upload-dropzone {
+    /* Ensure dropzone is full-width and block-level for clickability */
+    display: block;
+    width: 100%;
     border: 2px dashed var(--muted-foreground);
     border-radius: var(--radius);
     padding: 3rem;
     text-align: center;
     cursor: pointer;
     transition: border-color 0.2s;
+    position: relative;
+    z-index: 1;
 }
 
 .upload-dropzone:hover {
@@ -1196,6 +1201,7 @@ main {
     height: 100%;
     opacity: 0.5;
     z-index: 0;
+    pointer-events: none;
 }
 
 .animated-gradient.small {

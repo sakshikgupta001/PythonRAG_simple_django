@@ -72,13 +72,16 @@ def upload_view(request):
                 # Generate unique IDs for each chunk
                 base_doc_id = file.name # Consider sanitizing or using a hash if filename is complex/unsafe
                 chunk_ids = [f"{base_doc_id}_{i}" for i in range(len(chunks))]
+                # Create metadatas list, ensuring 'filename' is stored for filtering
+                metadatas = [{"filename": file.name, "chunk_index": i} for i in range(len(chunks))]
 
                 collection.add(
                     embeddings=embeddings,
                     documents=chunks,
-                    ids=chunk_ids
+                    ids=chunk_ids,
+                    metadatas=metadatas # Add metadatas here
                 )
-                logger.info(f"Added {len(chunks)} chunks from {file.name} to ChromaDB.")
+                logger.info(f"Added {len(chunks)} chunks from {file.name} to ChromaDB with metadata.")
 
             except Exception as e:
                 logger.error(f"Failed to add embeddings for {file.name} to ChromaDB: {e}", exc_info=True)
@@ -114,6 +117,7 @@ def query_view(request):
     try:
         data = json.loads(request.body)
         query = data.get('query', '').strip() # Trim whitespace
+        document_names = data.get('document_names', []) # New: Get document_names for filtering
     except json.JSONDecodeError:
         logger.warning("Received invalid JSON in query request body.")
         return JsonResponse({'success': False, 'message': "Invalid JSON format in request body."}, status=400)
@@ -138,9 +142,10 @@ def query_view(request):
             # Return 503 Service Unavailable as the backend dependency is down
             return JsonResponse({'success': False, 'message': "Failed to connect to the document database."}, status=503)
 
-        context_chunks = utils.query_chromadb(collection, query, n_results=5)
+        # Pass document_names to query_chromadb
+        context_chunks = utils.query_chromadb(collection, query, n_results=5, document_names=document_names)
         if not context_chunks:
-            logger.info(f"No relevant context found for query: '{query}'")
+            logger.info(f"No relevant context found for query: '{query}' with specified documents: {document_names}")
             # Return a specific message indicating no context was found.
             return JsonResponse({'success': True, 'query': query, 'response': "No relevant information found in the uploaded documents for your query."}, status=200)
 
@@ -155,3 +160,28 @@ def query_view(request):
         logger.error(f"Error processing query '{query}': {e}", exc_info=True)
         # Return a generic 500 error for internal processing issues
         return JsonResponse({'success': False, 'message': f"An error occurred while processing your query."}, status=500)
+
+# New view to list uploaded documents
+def documents_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'success': False, 'message': "Invalid request method. Only GET is allowed."}, status=405)
+    try:
+        collection = utils.initialize_chromadb()
+        if collection is None:
+            logger.error("Failed to initialize ChromaDB collection for listing documents.")
+            return JsonResponse({'success': False, 'message': "Failed to connect to the document database."}, status=503)
+
+        # Fetch all items and extract unique filenames from metadatas
+        # This assumes 'filename' is stored in metadatas as specified in upload_view modifications
+        all_items = collection.get(include=["metadatas"]) # Fetch only metadatas to be more efficient
+        
+        filenames = set()
+        if all_items and all_items.get('metadatas'):
+            for metadata_item in all_items['metadatas']: # Corrected variable name
+                if metadata_item and 'filename' in metadata_item: # Check metadata_item directly
+                    filenames.add(metadata_item['filename'])
+        
+        return JsonResponse({'success': True, 'documents': sorted(list(filenames))}, status=200)
+    except Exception as e:
+        logger.error(f"Error listing documents: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "An error occurred while retrieving document list."}, status=500)

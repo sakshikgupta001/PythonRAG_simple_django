@@ -92,8 +92,13 @@ function initAnimatedGradients() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // Get primary color from computed styles
-            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-            const rgb = hslToRgb(primaryColor);
+            const primaryColorString = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+            const rgb = hexToRgb(primaryColorString); // Use hexToRgb
+
+            if (!rgb) { // Add a check for parsed color
+                console.error("Failed to parse primary color for gradient: ", primaryColorString);
+                return; 
+            }
             
             // Update and draw particles
             particles.forEach(particle => {
@@ -136,36 +141,16 @@ function initAnimatedGradients() {
     });
 }
 
-// HSL to RGB conversion
-function hslToRgb(hslString) {
-    // Parse HSL string (format: "262.1 83.3% 57.8%")
-    const parts = hslString.split(' ');
-    const h = parseFloat(parts[0]) / 360;
-    const s = parseFloat(parts[1]) / 100;
-    const l = parseFloat(parts[2]) / 100;
-    
-    let r, g, b;
-    
-    if (s === 0) {
-        r = g = b = l; // achromatic
-    } else {
-        const hue2rgb = (p, q, t) => {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1/6) return p + (q - p) * 6 * t;
-            if (t < 1/2) return q;
-            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-            return p;
-        };
-        
-        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
-    }
-    
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+// Helper function to convert hex to RGB array
+function hexToRgb(hex) {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : null;
 }
 
 // Toast Notification System

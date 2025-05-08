@@ -77,9 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadStatus.innerHTML = '';
     }
     
-    function handleUpload() {
+    async function handleUpload() {
         if (!file || uploading) return;
-        
+
         uploading = true;
         uploadBtn.disabled = true;
         uploadBtnText.textContent = 'Uploading...';
@@ -88,123 +88,59 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadProgressContainer.classList.remove('hidden');
         uploadProgressBar.style.width = '0%';
         uploadProgressPercentage.textContent = '0%';
-        
-        // Simulate upload progress
-        let progress = 0;
-        const progressInterval = setInterval(() => {
-            progress += 5;
-            if (progress >= 95) {
-                clearInterval(progressInterval);
-                progress = 95;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('http://localhost:8000/api/upload/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to upload file');
             }
-            updateProgress(progress);
-        }, 300);
-        
-        // Simulate API call
-        setTimeout(() => {
-            clearInterval(progressInterval);
-            updateProgress(100);
-            
-            // Simulate successful upload
+
+            const data = await response.json();
+            if (data.success) {
+                updateProgress(100);
+                uploadStatus.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span style="color: #10b981">Upload successful</span>
+                `;
+                addUploadedFile(file);
+                showToast('Upload Successful', `${file.name} has been processed successfully.`, 'success');
+            } else {
+                throw new Error(data.message || 'Unknown error occurred');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            uploadStatus.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span style="color: #ef4444">Upload failed: ${error.message}</span>
+            `;
+            showToast('Upload Failed', error.message, 'error');
+        } finally {
             uploading = false;
             uploadBtn.disabled = false;
             uploadBtnText.textContent = 'Upload Document';
             uploadBtnIcon.classList.remove('hidden');
             uploadBtnLoader.classList.add('hidden');
-            
-            uploadStatus.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <span style="color: #10b981">Upload successful</span>
-            `;
-            
-            // Add to uploaded files
-            addUploadedFile(file);
-            
-            // Reset file input
             fileInput.value = '';
             file = null;
             uploadFilename.textContent = 'Drag and drop or click to upload';
             uploadFilesize.textContent = 'PDF, DOCX, TXT, PPTX (Max 50MB)';
             uploadDropzone.classList.remove('active');
-            
-            showToast('Upload Successful', `${file.name} has been processed successfully.`, 'success');
-            
-            // In a real implementation, you would use fetch API:
-            /*
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            fetch('/api/upload/', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                clearInterval(progressInterval);
-                updateProgress(100);
-                
-                if (data.success) {
-                    uploadStatus.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                        <span style="color: #10b981">Upload successful</span>
-                    `;
-                    
-                    addUploadedFile(file);
-                    showToast('Upload Successful', data.message, 'success');
-                } else {
-                    uploadStatus.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <span style="color: #ef4444">Upload failed. Please try again.</span>
-                    `;
-                    
-                    showToast('Upload Failed', data.message, 'error');
-                }
-                
-                uploading = false;
-                uploadBtn.disabled = false;
-                uploadBtnText.textContent = 'Upload Document';
-                uploadBtnIcon.classList.remove('hidden');
-                uploadBtnLoader.classList.add('hidden');
-                
-                fileInput.value = '';
-                file = null;
-                uploadFilename.textContent = 'Drag and drop or click to upload';
-                uploadFilesize.textContent = 'PDF, DOCX, TXT, PPTX (Max 50MB)';
-                uploadDropzone.classList.remove('active');
-            })
-            .catch(error => {
-                clearInterval(progressInterval);
-                updateProgress(100);
-                
-                uploadStatus.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                    <span style="color: #ef4444">Upload failed. Please try again.</span>
-                `;
-                
-                showToast('Upload Failed', 'There was an error uploading your file. Please try again.', 'error');
-                
-                uploading = false;
-                uploadBtn.disabled = false;
-                uploadBtnText.textContent = 'Upload Document';
-                uploadBtnIcon.classList.remove('hidden');
-                uploadBtnLoader.classList.add('hidden');
-            });
-            */
-        }, 3000);
+        }
     }
     
     function updateProgress(progress) {
