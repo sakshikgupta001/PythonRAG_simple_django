@@ -779,6 +779,79 @@ main {
     color: var(--muted-foreground);
 }
 
+/* Staged Files List */
+.staged-files-container {
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.staged-files-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.staged-files-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px; /* Or any height you prefer */
+    overflow-y: auto;
+}
+
+.staged-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+
+.staged-file-item:last-child {
+    border-bottom: none;
+}
+
+.staged-file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden; /* To prevent long names from breaking layout */
+}
+
+.staged-file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1; /* Allow shrinking if space is needed */
+}
+
+.staged-file-size {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0; /* Prevent size from shrinking */
+}
+
+.remove-staged-file-btn {
+    background: none;
+    border: none;
+    color: var(--destructive);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.remove-staged-file-btn:hover {
+    background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+}
+
 /* Query Page */
 .query-main {
     display: flex;

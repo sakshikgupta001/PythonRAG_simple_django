@@ -96,7 +96,7 @@
                             </div>
                             <div class="card-body">
                                 <label id="upload-dropzone" class="upload-dropzone">
-                                    <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.pptx" class="hidden">
+                                    <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.pptx" class="hidden" multiple>
                                     <div class="upload-icon-container">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -109,6 +109,13 @@
                                         <p id="upload-filesize" class="upload-filesize">PDF, DOCX, TXT, PPTX (Max 50MB)</p>
                                     </div>
                                 </label>
+
+                                <div id="staged-files-container" class="staged-files-container hidden">
+                                    <h3 class="staged-files-title">Selected Files:</h3>
+                                    <ul id="staged-files-list" class="staged-files-list">
+                                        <!-- Staged files will be listed here -->
+                                    </ul>
+                                </div>
 
                                 <div id="upload-progress-container" class="upload-progress-container hidden">
                                     <div class="upload-progress-header">
