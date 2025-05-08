@@ -174,56 +174,88 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filesToUpload.length === 0 || uploading) return;
 
         uploading = true;
-        // uploadBtn.disabled = true; // updateUploadButtonState will handle this during/after
-        
         let filesUploadedSuccessfullyCount = 0;
         const totalFilesToProcess = filesToUpload.length;
-
-        // Process a copy of the array, so removals during upload (if we were to allow that) wouldn't affect the loop.
-        // For now, we upload the current filesToUpload list and then clear it.
-        const currentBatch = [...filesToUpload]; 
+        const currentBatch = [...filesToUpload];
 
         for (let i = 0; i < currentBatch.length; i++) {
             const currentFile = currentBatch[i];
             
+            // Update UI for the current file being uploaded
             uploadBtnText.textContent = `Uploading ${currentFile.name} (${i + 1}/${totalFilesToProcess})...`;
             uploadBtnIcon.classList.add('hidden');
             uploadBtnLoader.classList.remove('hidden');
             uploadProgressContainer.classList.remove('hidden');
             uploadProgressBar.style.width = '0%';
             uploadProgressPercentage.textContent = '0%';
-            uploadStatus.innerHTML = `Processing ${currentFile.name}...`;
+            uploadStatus.innerHTML = `Starting upload of ${currentFile.name}...`;
 
             const formData = new FormData();
             formData.append('file', currentFile);
 
-            try {
-                const response = await fetch('http://localhost:8000/api/upload/', {
-                    method: 'POST',
-                    body: formData
-                });
+            await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'http://localhost:8000/api/upload/', true);
 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: 'Server returned an error' }));
-                    throw new Error(errorData.message || `Failed to upload ${currentFile.name}`);
-                }
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percentage = Math.round((event.loaded / event.total) * 100);
+                        updateProgress(percentage);
+                        uploadStatus.innerHTML = `Uploading ${currentFile.name}: ${percentage}%`;
+                    }
+                };
 
-                const data = await response.json();
-                if (data.success) {
-                    updateProgress(100); // For current file
-                    addUploadedFileToHistory(currentFile); // Add to UI list of successfully uploaded files
-                    showToast('Upload Successful', `${currentFile.name} processed.`, 'success');
-                    filesUploadedSuccessfullyCount++;
-                } else {
-                    throw new Error(data.message || `Unknown error for ${currentFile.name}`);
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            if (data.success) {
+                                updateProgress(100); // Final progress for this file
+                                addUploadedFileToHistory(currentFile);
+                                showToast('Upload Successful', `${currentFile.name} processed.`, 'success');
+                                filesUploadedSuccessfullyCount++;
+                                resolve(data);
+                            } else {
+                                throw new Error(data.message || `Unknown error for ${currentFile.name}`);
+                            }
+                        } catch (parseError) {
+                            console.error(`Error parsing response for ${currentFile.name}:`, parseError, xhr.responseText);
+                            updateProgress(0); 
+                            uploadStatus.innerHTML = `<span style="color: var(--destructive);">Failed: ${currentFile.name} - Invalid server response</span>`;
+                            showToast('Upload Failed', `${currentFile.name}: Invalid server response`, 'error');
+                            reject(new Error('Invalid server response'));
+                        }
+                    } else {
+                        let errorMessage = `Failed to upload ${currentFile.name}`;
+                        try {
+                            const errorData = JSON.parse(xhr.responseText);
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (e) {
+                            // Keep default error message if response is not JSON
+                        }
+                        updateProgress(0);
+                        uploadStatus.innerHTML = `<span style="color: var(--destructive);">Failed: ${currentFile.name} - ${xhr.statusText}</span>`;
+                        showToast('Upload Failed', `${currentFile.name}: ${errorMessage}`, 'error');
+                        reject(new Error(errorMessage));
+                    }
+                };
+
+                xhr.onerror = () => {
+                    updateProgress(0);
+                    uploadStatus.innerHTML = `<span style="color: var(--destructive);">Failed: ${currentFile.name} - Network error</span>`;
+                    showToast('Upload Failed', `${currentFile.name}: Network error. Please check your connection.`, 'error');
+                    reject(new Error('Network error'));
+                };
+
+                xhr.send(formData);
+            }).catch(error => {
+                // Error is already handled in onload and onerror, but catch prevents unhandled promise rejection
+                console.error(`Upload promise rejected for ${currentFile.name}:`, error);
+                // Ensure UI reflects failure for this specific file if not already done
+                if (uploadStatus.innerHTML.indexOf(currentFile.name) === -1 || !uploadStatus.innerHTML.includes("Failed")){
+                    uploadStatus.innerHTML = `<span style="color: var(--destructive);">Failed: ${currentFile.name} - ${error.message}</span>`;
                 }
-            } catch (error) {
-                console.error(`Upload error for ${currentFile.name}:`, error);
-                // Update progress to 0 or show error state for this file
-                updateProgress(0); 
-                uploadStatus.innerHTML = `<span style="color: var(--destructive);">Failed: ${currentFile.name} - ${error.message}</span>`;
-                showToast('Upload Failed', `${currentFile.name}: ${error.message}`, 'error');
-            }
+            });
         }
 
         // After all files in the batch are processed
