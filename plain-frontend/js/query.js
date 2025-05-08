@@ -33,23 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     initSpeechRecognition();
     fetchDocuments();
-
-    // Helper function to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
     
     // Event Listeners
     sidebarToggle.addEventListener('click', () => {
@@ -206,12 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadBtn.disabled = false;
 
         try {
-            const csrftoken = getCookie('csrftoken'); // Get CSRF token
             const response = await fetch('http://localhost:8000/api/query/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken, // Add CSRF token to headers
                 },
                 body: JSON.stringify({ 
                     query: queryText,
