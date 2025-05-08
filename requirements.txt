@@ -4,6 +4,6 @@ google-generativeai
 chromadb
 pypdf
 python-docx
-textract
+textract==1.6.3
 python-pptx
 python-dotenv
