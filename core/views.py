@@ -5,9 +5,11 @@ import os
 import json
 import uuid
 from . import utils
+from django.views.decorators.csrf import csrf_exempt  # Add this import
 
 logger = logging.getLogger(__name__)
 
+@csrf_exempt
 def upload_view(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': "Invalid request method. Only POST is allowed."}, status=405)
@@ -110,6 +112,7 @@ def upload_view(request):
                 # Logs an error if deletion fails, but doesn't stop the response
                 logger.error(f"Error removing temporary file {file_path}: {e}", exc_info=True)
 
+@csrf_exempt  # Add this decorator to exempt this view from CSRF protection
 def query_view(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': "Invalid request method. Only POST is allowed."}, status=405)
